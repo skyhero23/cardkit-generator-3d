@@ -386,16 +386,24 @@
                         </button>
                     </div>
 
+                    <!-- Selector de Estrategia Inteligente -->
+                    <div>
+                        <label class="text-[11px] text-slate-300 font-medium block mb-1">Estrategia de Conexión</label>
+                        <select id="select-sprue-strategy" class="w-full px-2.5 py-1.5 rounded-lg bg-card border border-slate-700 text-white text-xs focus:border-indigo-500 focus:outline-none">
+                            <option value="smart_perimeter" selected>✨ Perímetro Inteligente (Sin barras que crucen piezas)</option>
+                            <option value="direct_unobstructed">📏 Directo al Marco (Solo rayos libres)</option>
+                            <option value="none">🚫 Sin Conectores (Solo piezas y marco)</option>
+                        </select>
+                        <p class="text-[10px] text-slate-400 mt-1">Evita que los conectores atraviesen letras o partes del diseño.</p>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="text-[11px] text-slate-400 block mb-1">Conectores por Pieza</label>
-                            <select id="select-connectors-count" class="w-full px-2.5 py-1.5 rounded-lg bg-card border border-slate-700 text-white text-xs focus:border-indigo-500 focus:outline-none">
-                                <option value="auto">Automático (Inteligente)</option>
-                                <option value="1">1 Conector</option>
-                                <option value="2" selected>2 Conectores (Estable)</option>
-                                <option value="3">3 Conectores</option>
-                                <option value="4">4 Conectores (Robusto)</option>
-                            </select>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Pestañas al Marco</span>
+                                <span id="val-frame-connectors" class="text-emerald-400 font-mono font-medium">4</span>
+                            </div>
+                            <input id="slider-frame-connectors" type="range" min="2" max="8" step="1" value="4" class="w-full">
                         </div>
                         <div>
                             <div class="flex justify-between text-xs mb-1">
@@ -404,6 +412,14 @@
                             </div>
                             <input id="slider-connector-width" type="range" min="1.0" max="4.0" step="0.2" value="2.0" class="w-full">
                         </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300">Distancia de Unión entre Letras</span>
+                            <span id="val-bridge-dist" class="text-emerald-400 font-mono font-medium">8.0 mm</span>
+                        </div>
+                        <input id="slider-bridge-dist" type="range" min="2.0" max="20.0" step="1.0" value="8.0" class="w-full">
                     </div>
 
                     <!-- Muesca de Desprendimiento en V -->

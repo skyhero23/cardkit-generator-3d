@@ -289,7 +289,15 @@ class CardKitApp {
         if (chkFlipY) chkFlipY.addEventListener('change', () => this.regenerateKit());
 
         // 6. Conectores / Sprues
-        bindInput('select-connectors-count', val => this.sprueEngine.setConfig({ connectorsPerIsland: val }));
+        bindInput('select-sprue-strategy', val => this.sprueEngine.setConfig({ strategy: val }));
+        bindInput('slider-frame-connectors', val => {
+            document.getElementById('val-frame-connectors').textContent = val;
+            this.sprueEngine.setConfig({ frameConnectorsCount: parseInt(val, 10) });
+        });
+        bindInput('slider-bridge-dist', val => {
+            document.getElementById('val-bridge-dist').textContent = `${val} mm`;
+            this.sprueEngine.setConfig({ maxBridgeDist: parseFloat(val) });
+        });
         bindInput('slider-connector-width', val => {
             document.getElementById('val-connector-width').textContent = `${val} mm`;
             this.sprueEngine.setConfig({ width: parseFloat(val) });
