@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CardKit 3D Studio - Generador de Model Kits y Letras para Impresión 3D</title>
+    <meta name="description" content="Generador de CardKits para impresión 3D: crea tarjetas con letras y archivos SVG con conectores y marcos personalizados. Exporta en STL listo para imprimir.">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#0c0e14',
+                        panel: '#151822',
+                        card: '#1d212f',
+                        accent: '#6366f1',
+                        accentHover: '#4f46e5'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts: Amplio catálogo tipográfico -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Anton&family=Bangers&family=Bungee&family=Caveat:wght@700&family=Cinzel:wght@700&family=Dancing+Script:wght@700&family=Inter:wght@400;500;600;700;800;900&family=Lobster&family=Montserrat:wght@700;900&family=Orbitron:wght@700;900&family=Pacifico&family=Playfair+Display:wght@700&family=Poppins:wght@600;800&family=Press+Start+2P&family=Righteous&family=Roboto:wght@500;900&family=Russo+One&family=Silkscreen:wght@700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Three.js y Librerías de Visualización 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
+
+    <!-- Estilos de la aplicación -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-darkbg text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Barra de Navegación Superior -->
+    <header class="h-14 border-b border-slate-800 bg-panel/90 backdrop-blur-md px-4 flex items-center justify-between z-20 sticky top-0">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 via-indigo-500 to-amber-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <i data-lucide="layers" class="w-5 h-5 text-white"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-sm sm:text-base tracking-tight text-white flex items-center gap-2">
+                    CardKit 3D Studio
+                    <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700/50">v2.0</span>
+                </h1>
+            </div>
+        </div>
+
+        <!-- Acciones Rápidas -->
+        <div class="flex items-center gap-2 sm:gap-3">
+            <button id="btn-open-deploy-guide" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 flex items-center gap-1.5 transition-all">
+                <i data-lucide="github" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">Desplegar en GitHub</span>
+            </button>
+            <button id="btn-download-stl-header" class="text-xs font-semibold px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 flex items-center gap-1.5 transition-all">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>Descargar STL</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Área de Trabajo Principal (2 Columnas) -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+
+        <!-- Panel Lateral Izquierdo: Herramientas y Controles -->
+        <aside class="w-full lg:w-[460px] xl:w-[490px] border-r border-slate-800 bg-panel flex flex-col h-auto lg:h-[calc(100vh-3.5rem)] overflow-y-auto">
+
+            <!-- Selector de Modo Principal: Letras vs SVG -->
+            <div class="p-4 border-b border-slate-800/80 bg-slate-900/50">
+                <label class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block mb-2">Modo de Creación</label>
+                <div class="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-950/70 border border-slate-800">
+                    <button id="mode-btn-letters" class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all bg-indigo-600 text-white shadow-lg">
+                        <i data-lucide="type" class="w-4 h-4"></i>
+                        <span>Letras y Texto</span>
+                    </button>
+                    <button id="mode-btn-svg" class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800/50">
+                        <i data-lucide="file-code" class="w-4 h-4"></i>
+                        <span>Importar SVG</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-4 space-y-5 flex-1">
+
+                <!-- SECCIÓN 1: APARTADO DE LETRAS -->
+                <div id="section-letters-config" class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                            <i data-lucide="type" class="w-4 h-4"></i>
+                            Configuración de Letras
+                        </h2>
+                        <span class="text-[11px] text-slate-500">Multifuente 3D</span>
+                    </div>
+
+                    <!-- Input de Texto -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="text-xs font-medium text-slate-300">Texto del Kit</label>
+                            <span class="text-[11px] text-slate-400">Escribe letras o nombres</span>
+                        </div>
+                        <input id="input-text-content" type="text" value="A B C D E" placeholder="Ej: FELIZ CUMPLEAÑOS" class="w-full px-3 py-2 rounded-lg bg-card border border-slate-700/80 text-white text-sm font-semibold focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    </div>
+
+                    <!-- Presets Rápidos de Texto -->
+                    <div>
+                        <label class="text-[11px] text-slate-400 block mb-1.5 font-medium">Plantillas de Texto Rápidas</label>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button type="button" class="preset-text-btn preset-chip text-[11px] px-2.5 py-1 rounded-md bg-slate-800 hover:bg-indigo-950 hover:border-indigo-500/60 border border-slate-700 text-slate-300 transition-all" data-text="A B C D E F G H I J K L M N O P Q R S T U V W X Y Z" data-layout="individual">Abecedario A-Z</button>
+                            <button type="button" class="preset-text-btn preset-chip text-[11px] px-2.5 py-1 rounded-md bg-slate-800 hover:bg-indigo-950 hover:border-indigo-500/60 border border-slate-700 text-slate-300 transition-all" data-text="0 1 2 3 4 5 6 7 8 9" data-layout="individual">Números 0-9</button>
+                            <button type="button" class="preset-text-btn preset-chip text-[11px] px-2.5 py-1 rounded-md bg-slate-800 hover:bg-indigo-950 hover:border-indigo-500/60 border border-slate-700 text-slate-300 transition-all" data-text="FELIZ CUMPLEAÑOS" data-layout="individual">Cumpleaños</button>
+                            <button type="button" class="preset-text-btn preset-chip text-[11px] px-2.5 py-1 rounded-md bg-slate-800 hover:bg-indigo-950 hover:border-indigo-500/60 border border-slate-700 text-slate-300 transition-all" data-text="MAKER 3D" data-layout="connected">MAKER 3D</button>
+                        </div>
+                    </div>
+
+                    <!-- Selector de Fuentes (Gran Variedad) -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="text-xs font-medium text-slate-300">Tipo de Fuente</label>
+                            <label for="custom-font-file" class="text-[11px] text-indigo-400 hover:text-indigo-300 cursor-pointer flex items-center gap-1 font-medium">
+                                <i data-lucide="upload" class="w-3 h-3"></i> Subir .TTF/.OTF
+                            </label>
+                            <input id="custom-font-file" type="file" accept=".ttf,.otf,.woff" class="hidden">
+                        </div>
+                        <select id="font-family-select" class="w-full px-3 py-2 rounded-lg bg-card border border-slate-700/80 text-white text-xs font-medium focus:border-indigo-500 focus:outline-none">
+                            <!-- Opciones cargadas dinámicamente -->
+                        </select>
+                    </div>
+
+                    <!-- Modo de Disposición -->
+                    <div>
+                        <label class="text-xs font-medium text-slate-300 block mb-1.5">Organización de las Letras</label>
+                        <select id="select-layout-mode" class="w-full px-3 py-2 rounded-lg bg-card border border-slate-700/80 text-white text-xs focus:border-indigo-500 focus:outline-none">
+                            <option value="individual">🔲 Piezas individuales (Kit de letras ordenadas en rejilla)</option>
+                            <option value="connected">🔗 Texto continuo (Placa unida tipo llavero)</option>
+                        </select>
+                    </div>
+
+                    <!-- Sliders de Control de Letras -->
+                    <div class="space-y-3.5 pt-1">
+                        <!-- Escala / Tamaño de letra -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Escala / Tamaño de Letras</span>
+                                <span id="val-font-size" class="text-indigo-400 font-mono font-medium">22 mm</span>
+                            </div>
+                            <input id="slider-font-size" type="range" min="10" max="60" step="1" value="22" class="w-full">
+                        </div>
+
+                        <!-- Separación entre letras (Kerning) -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Separación entre Letras (Kerning)</span>
+                                <span id="val-letter-spacing" class="text-indigo-400 font-mono font-medium">4.0 mm</span>
+                            </div>
+                            <input id="slider-letter-spacing" type="range" min="-2" max="20" step="0.5" value="4.0" class="w-full">
+                        </div>
+
+                        <!-- Espaciado entre filas -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Separación entre Filas</span>
+                                <span id="val-row-spacing" class="text-indigo-400 font-mono font-medium">6.0 mm</span>
+                            </div>
+                            <input id="slider-row-spacing" type="range" min="2" max="25" step="0.5" value="6.0" class="w-full">
+                        </div>
+
+                        <!-- Grosor / Altura Z de las letras -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Espesor / Altura Z de Letras</span>
+                                <span id="val-letter-thickness" class="text-indigo-400 font-mono font-medium">2.0 mm</span>
+                            </div>
+                            <input id="slider-letter-thickness" type="range" min="0.8" max="5.0" step="0.2" value="2.0" class="w-full">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: APARTADO DE SVG (Inicialmente Oculto) -->
+                <div id="section-svg-config" class="space-y-4 hidden">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                            <i data-lucide="file-code" class="w-4 h-4"></i>
+                            Análisis y Conversión de SVG
+                        </h2>
+                        <span class="text-[11px] text-slate-500">Vectorial a 3D</span>
+                    </div>
+
+                    <!-- Drop Zone para SVG -->
+                    <div id="svg-drop-zone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-4 text-center cursor-pointer transition-all bg-card/60 hover:bg-slate-800/40 group">
+                        <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto mb-2 text-slate-400 group-hover:text-indigo-400 transition-colors"></i>
+                        <p class="text-xs font-medium text-slate-200">Arrastra tu archivo <span class="text-indigo-400 font-bold">.SVG</span> aquí</p>
+                        <p class="text-[11px] text-slate-400 mt-1">o haz clic para explorar en tu equipo</p>
+                        <input id="svg-file-input" type="file" accept=".svg" class="hidden">
+                    </div>
+
+                    <!-- Muestras de SVG Rápidas -->
+                    <div>
+                        <label class="text-[11px] text-slate-400 block mb-1.5 font-medium">O prueba una muestra rápida:</label>
+                        <div id="svg-samples-grid" class="grid grid-cols-2 gap-1.5">
+                            <!-- Botones generados dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Caja de Análisis del SVG -->
+                    <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-xs space-y-1.5">
+                        <div class="flex items-center justify-between text-slate-300">
+                            <span class="font-medium text-slate-400">Archivo actual:</span>
+                            <span id="svg-filename-display" class="font-mono text-indigo-300 truncate max-w-[180px]">Ninguno</span>
+                        </div>
+                        <div class="flex items-center justify-between text-slate-300">
+                            <span class="font-medium text-slate-400">Piezas detectadas:</span>
+                            <span id="svg-stat-islands" class="font-semibold text-emerald-400">0 piezas</span>
+                        </div>
+                        <div class="flex items-center justify-between text-slate-300">
+                            <span class="font-medium text-slate-400">Orificios interiores:</span>
+                            <span id="svg-stat-holes" class="font-semibold text-amber-400">0 orificios</span>
+                        </div>
+                    </div>
+
+                    <!-- Sliders de Transformación de SVG -->
+                    <div class="space-y-3 pt-1">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Margen de Seguridad con el Marco</span>
+                                <span id="val-svg-margin" class="text-indigo-400 font-mono font-medium">5.0 mm</span>
+                            </div>
+                            <input id="slider-svg-margin" type="range" min="1" max="15" step="0.5" value="5.0" class="w-full">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Rotación</span>
+                                <span id="val-svg-rotation" class="text-indigo-400 font-mono font-medium">0°</span>
+                            </div>
+                            <input id="slider-svg-rotation" type="range" min="0" max="360" step="15" value="0" class="w-full">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 pt-1">
+                            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                                <input id="chk-svg-flip-x" type="checkbox" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+                                <span>Invertir Horiz. (Espejo)</span>
+                            </label>
+                            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                                <input id="chk-svg-flip-y" type="checkbox" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+                                <span>Invertir Vert.</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 3: MARCO Y PERSONALIZACIÓN DE TEXTO -->
+                <div class="pt-4 border-t border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                            <i data-lucide="square" class="w-4 h-4"></i>
+                            Marco y Personalización
+                        </h2>
+                        <span class="text-[11px] text-slate-500">Estructura</span>
+                    </div>
+
+                    <!-- Presets de Tamaño de Marco -->
+                    <div>
+                        <label class="text-[11px] text-slate-400 block mb-1.5 font-medium">Formatos Estándar</label>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <button type="button" class="preset-frame-btn preset-chip text-[11px] p-2 rounded-lg bg-card hover:bg-slate-800 border border-slate-700/80 text-center transition-all" data-w="85" data-h="54">
+                                <span class="block font-bold text-slate-200">Tarjeta</span>
+                                <span class="text-[10px] text-slate-400">85 × 54 mm</span>
+                            </button>
+                            <button type="button" class="preset-frame-btn preset-chip text-[11px] p-2 rounded-lg bg-card hover:bg-slate-800 border border-slate-700/80 text-center transition-all" data-w="100" data-h="70">
+                                <span class="block font-bold text-slate-200">Mediana</span>
+                                <span class="text-[10px] text-slate-400">100 × 70 mm</span>
+                            </button>
+                            <button type="button" class="preset-frame-btn preset-chip text-[11px] p-2 rounded-lg bg-card hover:bg-slate-800 border border-slate-700/80 text-center transition-all" data-w="148" data-h="105">
+                                <span class="block font-bold text-slate-200">Postal A6</span>
+                                <span class="text-[10px] text-slate-400">148 × 105 mm</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sliders de Dimensiones del Marco -->
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Ancho (X)</span>
+                                    <span id="val-frame-width" class="text-amber-400 font-mono font-medium">100 mm</span>
+                                </div>
+                                <input id="slider-frame-width" type="range" min="50" max="220" step="1" value="100" class="w-full">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Alto (Y)</span>
+                                    <span id="val-frame-height" class="text-amber-400 font-mono font-medium">70 mm</span>
+                                </div>
+                                <input id="slider-frame-height" type="range" min="40" max="180" step="1" value="70" class="w-full">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Grosor Total (Z)</span>
+                                    <span id="val-frame-thickness" class="text-amber-400 font-mono font-medium">2.0 mm</span>
+                                </div>
+                                <input id="slider-frame-thickness" type="range" min="1.0" max="5.0" step="0.2" value="2.0" class="w-full">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Ancho Borde</span>
+                                    <span id="val-border-width" class="text-amber-400 font-mono font-medium">6.0 mm</span>
+                                </div>
+                                <input id="slider-border-width" type="range" min="3.0" max="15.0" step="0.5" value="6.0" class="w-full">
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Radio de Esquinas</span>
+                                <span id="val-corner-radius" class="text-amber-400 font-mono font-medium">4.0 mm</span>
+                            </div>
+                            <input id="slider-corner-radius" type="range" min="0" max="15" step="0.5" value="4.0" class="w-full">
+                        </div>
+                    </div>
+
+                    <!-- Personalización de Letras en el Marco -->
+                    <div class="p-3 rounded-xl bg-card/70 border border-slate-700/80 space-y-3">
+                        <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
+                            <i data-lucide="edit-3" class="w-3.5 h-3.5 text-indigo-400"></i>
+                            <span>Personalizar Texto en el Marco</span>
+                        </div>
+
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Texto Borde Superior</label>
+                            <input id="input-frame-top-text" type="text" placeholder="Ej: ★ EDICIÓN ESPECIAL ★" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:border-indigo-500 focus:outline-none">
+                        </div>
+
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Texto Borde Inferior</label>
+                            <input id="input-frame-bottom-text" type="text" placeholder="Ej: DISEÑADO POR TI" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:border-indigo-500 focus:outline-none">
+                        </div>
+
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Estilo de Texto en el Marco</label>
+                            <select id="select-frame-text-style" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:border-indigo-500 focus:outline-none">
+                                <option value="embossed">▲ En Relieve (+0.6 mm hacia arriba)</option>
+                                <option value="engraved">▼ Grabado / Bajo Relieve</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Orificio de Llavero / Colgante -->
+                    <div class="flex items-center justify-between p-2.5 rounded-lg bg-card/40 border border-slate-800">
+                        <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                            <input id="chk-hanger-hole" type="checkbox" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+                            <span>Orificio para Llavero / Colgar</span>
+                        </label>
+                        <select id="select-hanger-corner" class="text-xs px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300">
+                            <option value="top_left">Superior Izquierda</option>
+                            <option value="top_right">Superior Derecha</option>
+                            <option value="bottom_left">Inferior Izquierda</option>
+                            <option value="bottom_right">Inferior Derecha</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 4: CONECTORES AUTOMÁTICOS (SPRUES) -->
+                <div class="pt-4 border-t border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                            <i data-lucide="git-commit" class="w-4 h-4"></i>
+                            Conectores Automáticos (Sprues)
+                        </h2>
+                        <button id="btn-regenerate-sprues" class="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold">
+                            <i data-lucide="refresh-cw" class="w-3 h-3"></i> Recalcular
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Conectores por Pieza</label>
+                            <select id="select-connectors-count" class="w-full px-2.5 py-1.5 rounded-lg bg-card border border-slate-700 text-white text-xs focus:border-indigo-500 focus:outline-none">
+                                <option value="auto">Automático (Inteligente)</option>
+                                <option value="1">1 Conector</option>
+                                <option value="2" selected>2 Conectores (Estable)</option>
+                                <option value="3">3 Conectores</option>
+                                <option value="4">4 Conectores (Robusto)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Ancho Conector</span>
+                                <span id="val-connector-width" class="text-emerald-400 font-mono font-medium">2.0 mm</span>
+                            </div>
+                            <input id="slider-connector-width" type="range" min="1.0" max="4.0" step="0.2" value="2.0" class="w-full">
+                        </div>
+                    </div>
+
+                    <!-- Muesca de Desprendimiento en V -->
+                    <div class="p-3 rounded-xl bg-card/70 border border-slate-700/80 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center gap-2 text-xs font-medium text-slate-200 cursor-pointer">
+                                <input id="chk-connector-notch" type="checkbox" checked class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+                                <span>Muesca de Corte (Breakaway)</span>
+                            </label>
+                            <span class="text-[10px] text-emerald-400 font-semibold uppercase px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/50">Recomendado</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 leading-relaxed">
+                            Crea un corte fino en V en la unión de la pieza para que puedas desprenderla fácilmente con los dedos sin romperla.
+                        </p>
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Profundidad del Corte</span>
+                                <span id="val-notch-depth" class="text-emerald-400 font-mono font-medium">0.8 mm</span>
+                            </div>
+                            <input id="slider-notch-depth" type="range" min="0.3" max="1.4" step="0.1" value="0.8" class="w-full">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 5: COLOR DE FILAMENTO Y MATERIAL -->
+                <div class="pt-4 border-t border-slate-800 space-y-3">
+                    <label class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Color de Filamento 3D</label>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button type="button" class="filament-color-btn w-6 h-6 rounded-full bg-[#fbc531] ring-2 ring-white scale-110 shadow-md" data-color="pla_gold" title="PLA Seda Oro"></button>
+                        <button type="button" class="filament-color-btn w-6 h-6 rounded-full bg-[#1e1e24] shadow-md" data-color="pla_black" title="PLA Negro Mate"></button>
+                        <button type="button" class="filament-color-btn w-6 h-6 rounded-full bg-[#f5f6fa] shadow-md" data-color="pla_white" title="PLA Blanco Puro"></button>
+                        <button type="button" class="filament-color-btn w-6 h-6 rounded-full bg-[#e84118] shadow-md" data-color="pla_red" title="PLA Rojo"></button>
+                        <button type="button" class="filament-color-btn w-6 h-6 rounded-full bg-[#00a8ff] shadow-md" data-color="pla_blue" title="PLA Azul"></button>
+                        <button type="button" class="filament-color-btn w-6 h-6 rounded-full bg-[#4cd137] shadow-md" data-color="pla_green" title="PLA Verde Neón"></button>
+                        <button type="button" class="filament-color-btn w-6 h-6 rounded-full bg-[#e67e22] shadow-md" data-color="pla_orange" title="PLA Naranja"></button>
+                        <button type="button" class="filament-color-btn w-6 h-6 rounded-full bg-[#9c88ff] shadow-md" data-color="pla_purple" title="PLA Morado"></button>
+                        <button type="button" class="filament-color-btn w-6 h-6 rounded-full bg-[#dcdde1] shadow-md" data-color="pla_silver" title="PLA Plata"></button>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- Área Derecha: Visor 3D y Acciones Flotantes -->
+        <section class="flex-1 flex flex-col relative h-[500px] lg:h-[calc(100vh-3.5rem)] bg-darkbg">
+
+            <!-- Contenedor del Lienzo WebGL Three.js -->
+            <div id="viewer-3d-canvas" class="w-full h-full relative cursor-grab active:cursor-grabbing"></div>
+
+            <!-- Barra de Herramientas de Cámara Flotante (Arriba Derecha) -->
+            <div class="absolute top-4 right-4 glass-floating rounded-xl p-1.5 flex items-center gap-1 shadow-2xl z-10">
+                <button id="btn-view-top" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 text-xs text-slate-300 font-medium transition-colors" title="Vista Superior (Planta)">
+                    Top
+                </button>
+                <button id="btn-view-iso" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-xs text-white font-medium transition-colors" title="Vista Isométrica 3D">
+                    3D Iso
+                </button>
+                <button id="btn-view-front" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 text-xs text-slate-300 font-medium transition-colors" title="Vista Frontal">
+                    Front
+                </button>
+                <div class="h-4 w-px bg-slate-700 mx-1"></div>
+                <button id="btn-view-reset" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 transition-colors" title="Centrar Cámara">
+                    <i data-lucide="crosshair" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Opciones de Visualización Flotantes (Arriba Izquierda) -->
+            <div class="absolute top-4 left-4 glass-floating rounded-xl px-3 py-2 flex items-center gap-4 text-xs z-10 text-slate-300">
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input id="chk-wireframe" type="checkbox" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+                    <span>Malla (Wireframe)</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input id="chk-highlight-sprues" type="checkbox" checked class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+                    <span class="flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-[#ff6b35]"></span>
+                        Resaltar Conectores
+                    </span>
+                </label>
+            </div>
+
+            <!-- Panel Flotante Inferior de Estadísticas y Descarga Directa -->
+            <div class="absolute bottom-4 left-4 right-4 glass-floating rounded-2xl p-4 shadow-2xl z-10 flex flex-col md:flex-row items-center justify-between gap-4">
+
+                <!-- Estadísticas Físicas de Impresión 3D -->
+                <div class="grid grid-cols-3 sm:grid-cols-6 gap-3 sm:gap-4 w-full md:w-auto text-center md:text-left">
+                    <div>
+                        <span class="text-[10px] uppercase text-slate-400 font-semibold block">Dimensiones</span>
+                        <span id="stat-dims" class="text-xs font-mono font-bold text-slate-100">100 × 70 × 2 mm</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] uppercase text-slate-400 font-semibold block">Volumen</span>
+                        <span id="stat-volume" class="text-xs font-mono font-bold text-indigo-300">0.0 cm³</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] uppercase text-slate-400 font-semibold block">Peso Filamento</span>
+                        <span id="stat-weight" class="text-xs font-mono font-bold text-emerald-400">0.0 g (PLA)</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] uppercase text-slate-400 font-semibold block">Tiempo Est.</span>
+                        <span id="stat-time" class="text-xs font-mono font-bold text-amber-400">~0 min</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] uppercase text-slate-400 font-semibold block">Piezas</span>
+                        <span id="stat-parts" class="text-xs font-mono font-bold text-slate-200">0 piezas</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] uppercase text-slate-400 font-semibold block">Conectores</span>
+                        <span id="stat-sprues" class="text-xs font-mono font-bold text-orange-400">0 conectores</span>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción de Descarga -->
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <button id="btn-export-svg-2d" class="flex-1 md:flex-none px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition-all">
+                        <i data-lucide="file-output" class="w-4 h-4 text-slate-400"></i>
+                        <span>Exportar SVG 2D</span>
+                    </button>
+                    <button id="btn-download-stl" class="flex-1 md:flex-none px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 hover:from-indigo-500 hover:to-indigo-500 text-white text-xs font-bold shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>DESCARGAR STL (3D)</span>
+                    </button>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Modal: Guía de Despliegue en GitHub Pages -->
+    <div id="modal-deploy-guide" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-panel border border-slate-700 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto">
+            <button id="btn-close-deploy-guide" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-950/80 border border-indigo-700/60 flex items-center justify-center text-indigo-400">
+                    <i data-lucide="github" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Despliegue en GitHub Pages</h3>
+                    <p class="text-xs text-slate-400">Publica tu generador gratis y en minutos con 0 configuración de servidor.</p>
+                </div>
+            </div>
+
+            <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                    <span class="font-bold text-indigo-300 flex items-center gap-1.5">
+                        <span class="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">1</span>
+                        Crea un repositorio en GitHub
+                    </span>
+                    <p class="text-slate-400 pl-6">Entra en tu cuenta de GitHub y crea un nuevo repositorio público (ej: <code class="text-amber-400">cardkit-generator-3d</code>).</p>
+                </div>
+
+                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                    <span class="font-bold text-indigo-300 flex items-center gap-1.5">
+                        <span class="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">2</span>
+                        Sube los archivos del proyecto
+                    </span>
+                    <pre class="bg-black/50 p-2.5 rounded-lg text-emerald-400 font-mono text-[11px] overflow-x-auto mt-1">git init
+git add .
+git commit -m "Initial CardKit 3D Studio"
+git branch -M main
+git remote add origin https://github.com/skyhero23/cardkit-generator-3d.git
+git push -u origin main</pre>
+                </div>
+
+                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                    <span class="font-bold text-indigo-300 flex items-center gap-1.5">
+                        <span class="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">3</span>
+                        Activa GitHub Pages en 1 Clic
+                    </span>
+                    <p class="text-slate-400 pl-6">
+                        En tu repositorio ve a <strong>Settings → Pages</strong>.<br>
+                        En <em>Branch</em> selecciona <strong>main</strong> y carpeta <strong>/ (root)</strong>, luego haz clic en <strong>Save</strong>.<br>
+                        ¡Listo! Tu web estará disponible en <code class="text-indigo-400 font-mono">https://skyhero23.github.io/cardkit-generator-3d</code>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="pt-2 flex justify-end">
+                <button onclick="document.getElementById('modal-deploy-guide').classList.add('hidden')" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors">
+                    Entendido, ¡gracias!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificación Flotante Toast -->
+    <div id="toast-notification" class="fixed bottom-24 right-6 glass-floating border border-indigo-500/50 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 z-50">
+        <div class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="check" class="w-4 h-4"></i>
+        </div>
+        <span id="toast-message" class="text-xs font-medium text-slate-200">Mensaje</span>
+    </div>
+
+    <!-- Inicializar Iconos Lucide -->
+    <script>
+        lucide.createIcons();
+    </script>
+
+    <!-- Script de la Aplicación (Módulos ES6) -->
+    <script type="module" src="js/app.js"></script>
+
+</body>
+</html>

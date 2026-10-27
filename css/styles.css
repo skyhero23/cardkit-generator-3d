@@ -1,0 +1,112 @@
+@charset "UTF-8";
+
+/* Estilos personalizados y utilidades de CardKit 3D Studio */
+
+:root {
+    --bg-primary: #0f1117;
+    --bg-secondary: #171923;
+    --bg-card: #1e2230;
+    --border-color: #2e354b;
+    --accent-primary: #6366f1;
+    --accent-hover: #4f46e5;
+    --accent-amber: #f59e0b;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: #e2e8f0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    user-select: none;
+    overflow-x: hidden;
+}
+
+/* Scrollbars estilizados */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #11131a;
+}
+::-webkit-scrollbar-thumb {
+    background: #2d3748;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #4a5568;
+}
+
+/* Sliders personalizados */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: #2d3748;
+    border-radius: 9999px;
+    outline: none;
+    transition: background 0.2s;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #6366f1;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.6);
+    transition: transform 0.15s, background-color 0.15s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: #818cf8;
+}
+
+/* Efecto Glassmorphism */
+.glass-panel {
+    background: rgba(26, 30, 44, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-floating {
+    background: rgba(17, 24, 39, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Estilo para acordeones y pestañas colapsables */
+details summary::-webkit-details-marker {
+    display: none;
+}
+
+/* Animaciones sutiles */
+@keyframes pulseSubtle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.animate-pulse-subtle {
+    animation: pulseSubtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Lienzo 3D */
+#viewer-3d-canvas canvas {
+    outline: none;
+    display: block;
+}
+
+/* Tarjetas de Presets */
+.preset-chip {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.preset-chip:hover {
+    transform: translateY(-1px);
+}
+.preset-chip:active {
+    transform: translateY(0);
+}
